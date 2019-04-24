@@ -1,0 +1,7 @@
+[package]
+name = "parser-toy"
+version = "0.1.0"
+authors = ["Jeroen Vervaeke <jeroen@vervaeke.pro>"]
+edition = "2018"
+
+[dependencies]
