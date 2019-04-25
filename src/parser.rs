@@ -22,11 +22,11 @@ impl<'a, F, Output> Parser<'a, Output> for F
 #[wasm_bindgen]
 #[derive(Debug, PartialEq)]
 pub struct Reference {
-    reference_type: u32,
-    company_space_id: Option<u32>,
-    aggregate_root_id: Option<u32>,
-    revision: Option<u32>,
-    object_id: Option<u32>,
+    pub reference_type: u32,
+    pub company_space_id: Option<u32>,
+    pub aggregate_root_id: Option<u32>,
+    pub revision: Option<u32>,
+    pub object_id: Option<u32>,
 }
 
 #[wasm_bindgen]

@@ -1,5 +1,5 @@
 [package]
-name = "parser-toy"
+name = "px-reference"
 version = "0.1.0"
 authors = ["Jeroen Vervaeke <jeroen@vervaeke.pro>"]
 edition = "2018"
