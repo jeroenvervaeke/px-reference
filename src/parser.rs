@@ -17,6 +17,10 @@ impl<'a, F, Output> Parser<'a, Output> for F
     }
 }
 
+fn create_reference_structure_parser<'a>() -> impl Parser<'a, (u32, Vec<u32>)> {
+    move |input: &'a str| pair(encoded_group, one_or_more(right(dash, encoded_group))).parse(input)
+}
+
 fn dash(input: &str) -> ParseResult<()> {
     match input.chars().next() {
         Some('-') => Ok((&input['-'.len_utf8()..], ())),
@@ -261,5 +265,31 @@ mod one_or_more {
     #[test]
     fn one_or_more_no_matches() {
         assert_eq!(one_or_more(dash).parse("AAA-"), Err("AAA-"));
+    }
+}
+
+#[cfg(test)]
+mod parse_reference_structure {
+    use super::*;
+
+    #[test]
+    fn parse_reference_structure_1() {
+        let reference_parser = create_reference_structure_parser();
+
+        assert_eq!(reference_parser.parse("BA-AAAACD-AAAAAEGF"), Ok(("", (16, vec![35, 1125]))));
+    }
+
+    #[test]
+    fn parse_reference_structure_2() {
+        let reference_parser = create_reference_structure_parser();
+
+        assert_eq!(reference_parser.parse("AF-AAAABA"), Ok(("", (5, vec![16]))));
+    }
+
+    #[test]
+    fn parse_reference_structure_3() {
+        let reference_parser = create_reference_structure_parser();
+
+        assert_eq!(reference_parser.parse("GA-AAAABA-AAAGHCIU"), Ok(("", (96, vec![16, 422541]))));
     }
 }
