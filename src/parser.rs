@@ -2,14 +2,29 @@ const CHAR_CODE_A: u32 = 'A' as u32;
 const CHAR_CODE_R: u32 = 'R' as u32;
 const CHAR_R_OFFSET: u32 = CHAR_CODE_R - 10;
 
-fn dash(input: &str) -> Result<(&str, ()), &str> {
+type ParseResult<'a, Output> = Result<(&'a str, Output), &'a str>;
+
+trait Parser<'a, Output> {
+    fn parse(&self, input: &'a str) -> ParseResult<'a, Output>;
+}
+
+impl<'a, F, Output> Parser<'a, Output> for F
+    where
+        F: Fn(&'a str) -> ParseResult<Output>,
+{
+    fn parse(&self, input: &'a str) -> ParseResult<'a, Output> {
+        self(input)
+    }
+}
+
+fn dash(input: &str) -> ParseResult<()> {
     match input.chars().next() {
         Some('-') => Ok((&input['-'.len_utf8()..], ())),
         _ => Err(input),
     }
 }
 
-fn encoded_group(input: &str) -> Result<(&str, u32), &str> {
+fn encoded_group(input: &str) -> ParseResult<u32> {
     let (decoded, total_char_length) = input.chars()
         .map(|character| (char_to_number(character), character.len_utf8()))
         .take_while(|(number_result, character_length)| number_result.is_some())
@@ -30,12 +45,12 @@ fn encoded_group(input: &str) -> Result<(&str, u32), &str> {
     }
 }
 
-fn pair<P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Fn(&str) -> Result<(&str, (R1, R2)), &str>
-    where P1: Fn(&str) -> Result<(&str, R1), &str>,
-          P2: Fn(&str) -> Result<(&str, R2), &str>,
+fn pair<'a, P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Fn(&'a str) -> ParseResult<'a, (R1, R2)>
+    where P1: Parser<'a, R1>,
+          P2: Parser<'a, R2>,
 {
-    move |input: &str| match parser1(input) {
-        Ok((next_input, result1)) => match parser2(next_input) {
+    move |input: &'a str| match parser1.parse(input) {
+        Ok((next_input, result1)) => match parser2.parse(next_input) {
             Ok((final_input, result2)) => Ok((final_input, (result1, result2))),
             Err(err) => Err(err),
         },
@@ -43,12 +58,12 @@ fn pair<P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Fn(&str) -> Result<(&s
     }
 }
 
-fn map<P, F, A, B>(parser: P, map_fn: F) -> impl Fn(&str) -> Result<(&str, B), &str>
+fn map<'a, P, F, A, B>(parser: P, map_fn: F) -> impl Fn(&'a str) -> ParseResult<'a, B>
     where
-        P: Fn(&str) -> Result<(&str, A), &str>,
+        P: Parser<'a, A>,
         F: Fn(A) -> B
 {
-    move |input: &str| match parser(input) {
+    move |input: &'a str| match parser.parse(input) {
         Ok((next_input, result)) => Ok((next_input, map_fn(result))),
         Err(err) => Err(err),
     }
