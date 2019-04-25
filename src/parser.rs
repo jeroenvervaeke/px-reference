@@ -1,3 +1,5 @@
+use wasm_bindgen::prelude::*;
+
 const CHAR_CODE_A: u32 = 'A' as u32;
 const CHAR_CODE_R: u32 = 'R' as u32;
 const CHAR_R_OFFSET: u32 = CHAR_CODE_R - 10;
@@ -14,6 +16,32 @@ impl<'a, F, Output> Parser<'a, Output> for F
 {
     fn parse(&self, input: &'a str) -> ParseResult<'a, Output> {
         self(input)
+    }
+}
+
+#[wasm_bindgen]
+#[derive(Debug, PartialEq)]
+pub struct Reference {
+    reference_type: u32,
+    company_space_id: Option<u32>,
+    aggregate_root_id: Option<u32>,
+    revision: Option<u32>,
+    object_id: Option<u32>,
+}
+
+#[wasm_bindgen]
+pub fn parse_reference(input: &str) -> Option<Reference> {
+    let reference_parser = create_reference_structure_parser();
+
+    match reference_parser.parse(input) {
+        Ok((_, (reference_type, ids))) => Some(Reference {
+            reference_type,
+            company_space_id: ids.get(0).map(|id| *id),
+            aggregate_root_id: ids.get(1).map(|id| *id),
+            revision: ids.get(2).map(|id| *id),
+            object_id: ids.get(3).map(|id| *id),
+        }),
+        Err(_) => None,
     }
 }
 
@@ -291,5 +319,43 @@ mod parse_reference_structure {
         let reference_parser = create_reference_structure_parser();
 
         assert_eq!(reference_parser.parse("GA-AAAABA-AAAGHCIU"), Ok(("", (96, vec![16, 422541]))));
+    }
+}
+
+#[cfg(test)]
+mod parse_reference {
+    use super::*;
+
+    #[test]
+    fn parse_reference_1() {
+        assert_eq!(parse_reference("BA-AAAACD-AAAAAEGF"), Some(Reference {
+            reference_type: 16,
+            company_space_id: Some(35),
+            aggregate_root_id: Some(1125),
+            revision: None,
+            object_id: None,
+        }));
+    }
+
+    #[test]
+    fn parse_reference_2() {
+        assert_eq!(parse_reference("AF-AAAABA"), Some(Reference {
+            reference_type: 5,
+            company_space_id: Some(16),
+            aggregate_root_id: None,
+            revision: None,
+            object_id: None,
+        }));
+    }
+
+    #[test]
+    fn parse_reference_3() {
+        assert_eq!(parse_reference("GA-AAAABA-AAAGHCIU"), Some(Reference {
+            reference_type: 96,
+            company_space_id: Some(16),
+            aggregate_root_id: Some(422541),
+            revision: None,
+            object_id: None,
+        }));
     }
 }
