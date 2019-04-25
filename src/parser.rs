@@ -56,6 +56,13 @@ fn dash(input: &str) -> ParseResult<()> {
     }
 }
 
+fn empty(input: &str) -> ParseResult<()> {
+    match input.chars().next() {
+        None => Ok((&input, ())),
+        _ => Err(input),
+    }
+}
+
 fn encoded_group(input: &str) -> ParseResult<u32> {
     let (decoded, total_char_length) = input.chars()
         .map(|character| (char_to_number(character), character.len_utf8()))
@@ -193,6 +200,21 @@ mod dash {
     #[test]
     fn dash_abcde_dash() {
         assert_eq!(dash("ABCDE-"), Err("ABCDE-"));
+    }
+}
+
+#[cfg(test)]
+mod empty {
+    use super::*;
+
+    #[test]
+    fn emtpy() {
+        assert_eq!(empty(""), Ok(("", ())));
+    }
+
+    #[test]
+    fn non_empty() {
+        assert_eq!(empty("not empty"), Err("not empty"));
     }
 }
 
