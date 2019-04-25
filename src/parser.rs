@@ -30,6 +30,19 @@ fn encoded_group(input: &str) -> Result<(&str, u32), &str> {
     }
 }
 
+fn pair<P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Fn(&str) -> Result<(&str, (R1, R2)), &str>
+    where P1: Fn(&str) -> Result<(&str, R1), &str>,
+          P2: Fn(&str) -> Result<(&str, R2), &str>,
+{
+    move |input: &str| match parser1(input) {
+        Ok((next_input, result1)) => match parser2(next_input) {
+            Ok((final_input, result2)) => Ok((final_input, (result1, result2))),
+            Err(err) => Err(err),
+        },
+        Err(err) => Err(err),
+    }
+}
+
 fn char_to_number(character: char) -> Option<u32> {
     match character {
         c @ 'A'...'J' => Some((c as u32) - CHAR_CODE_A),
@@ -125,5 +138,20 @@ mod encoded_group {
     #[test]
     fn encoded_group_bijdrage_dash_nummer_dash_1() {
         assert_eq!(encoded_group("BIJDRAGE-NUMMER-1"), Ok(("-NUMMER-1", 412_328_036)));
+    }
+}
+
+#[cfg(test)]
+mod pair {
+    use super::*;
+
+    #[test]
+    fn encoded_group_dash_dash() {
+        assert_eq!(pair(dash, dash)("--"), Ok(("", ((), ()))));
+    }
+
+    #[test]
+    fn encoded_group_aaaa_dash_aaab_dash_123() {
+        assert_eq!(pair(encoded_group, pair(dash, pair(encoded_group, dash)))("AAAA-AAAB-123"), Ok(("123", (0, ((), (1, ()))))));
     }
 }
