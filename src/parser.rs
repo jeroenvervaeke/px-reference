@@ -69,6 +69,22 @@ fn map<'a, P, F, A, B>(parser: P, map_fn: F) -> impl Parser<'a, B>
     }
 }
 
+fn left<'a, P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Parser<'a, R1>
+    where
+        P1: Parser<'a, R1>,
+        P2: Parser<'a, R2>,
+{
+    map(pair(parser1, parser2), |(left, _right)| left)
+}
+
+fn right<'a, P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Parser<'a, R2>
+    where
+        P1: Parser<'a, R1>,
+        P2: Parser<'a, R2>,
+{
+    map(pair(parser1, parser2), |(_left, right)| right)
+}
+
 fn char_to_number(character: char) -> Option<u32> {
     match character {
         c @ 'A'...'J' => Some((c as u32) - CHAR_CODE_A),
@@ -194,5 +210,20 @@ mod map {
     #[test]
     fn map_aaal_dash_ab() {
         assert_eq!(pair(encoded_group, map(pair(dash, encoded_group), |(result1, result2)| result2)).parse("AAAL-AB"), Err("L-AB"));
+    }
+}
+
+#[cfg(test)]
+mod left_right {
+    use super::*;
+
+    #[test]
+    fn map_left_aac_dash_123() {
+        assert_eq!(left(encoded_group, dash).parse("AAC-123"), Ok(("123", 2)));
+    }
+
+    #[test]
+    fn map_right_aac_dash() {
+        assert_eq!(right(encoded_group, dash).parse("AAC-123"), Ok(("123", ())));
     }
 }
