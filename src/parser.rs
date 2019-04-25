@@ -46,7 +46,7 @@ pub fn parse_reference(input: &str) -> Option<Reference> {
 }
 
 fn create_reference_structure_parser<'a>() -> impl Parser<'a, (u32, Vec<u32>)> {
-    move |input: &'a str| pair(encoded_group, one_or_more(right(dash, encoded_group))).parse(input)
+    move |input: &'a str| left(pair(encoded_group, one_or_more(right(dash, encoded_group))), empty).parse(input)
 }
 
 fn dash(input: &str) -> ParseResult<()> {
@@ -379,5 +379,15 @@ mod parse_reference {
             revision: None,
             object_id: None,
         }));
+    }
+
+    #[test]
+    fn parse_reference_4() {
+        assert_eq!(parse_reference("GA-AAAABA-AAAGHCIU-INVALID"), None);
+    }
+
+    #[test]
+    fn parse_reference_5() {
+        assert_eq!(parse_reference("GA-AAAABA-LAAGHCIU"), None);
     }
 }
