@@ -157,12 +157,12 @@ mod pair {
     use super::*;
 
     #[test]
-    fn encoded_group_dash_dash() {
+    fn pair_dash_dash() {
         assert_eq!(pair(dash, dash)("--"), Ok(("", ((), ()))));
     }
 
     #[test]
-    fn encoded_group_aaaa_dash_aaab_dash_123() {
+    fn pair_aaaa_dash_aaab_dash_123() {
         assert_eq!(pair(encoded_group, pair(dash, pair(encoded_group, dash)))("AAAA-AAAB-123"), Ok(("123", (0, ((), (1, ()))))));
     }
 }
