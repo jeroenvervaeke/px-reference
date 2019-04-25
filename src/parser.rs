@@ -43,6 +43,17 @@ fn pair<P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Fn(&str) -> Result<(&s
     }
 }
 
+fn map<P, F, A, B>(parser: P, map_fn: F) -> impl Fn(&str) -> Result<(&str, B), &str>
+    where
+        P: Fn(&str) -> Result<(&str, A), &str>,
+        F: Fn(A) -> B
+{
+    move |input: &str| match parser(input) {
+        Ok((next_input, result)) => Ok((next_input, map_fn(result))),
+        Err(err) => Err(err),
+    }
+}
+
 fn char_to_number(character: char) -> Option<u32> {
     match character {
         c @ 'A'...'J' => Some((c as u32) - CHAR_CODE_A),
@@ -153,5 +164,20 @@ mod pair {
     #[test]
     fn encoded_group_aaaa_dash_aaab_dash_123() {
         assert_eq!(pair(encoded_group, pair(dash, pair(encoded_group, dash)))("AAAA-AAAB-123"), Ok(("123", (0, ((), (1, ()))))));
+    }
+}
+
+#[cfg(test)]
+mod map {
+    use super::*;
+
+    #[test]
+    fn map_aaac_dash_ab() {
+        assert_eq!(pair(encoded_group, map(pair(dash, encoded_group), |(result1, result2)| result2))("AAAC-AB"), Ok(("", (2, 1))));
+    }
+
+    #[test]
+    fn map_aaal_dash_ab() {
+        assert_eq!(pair(encoded_group, map(pair(dash, encoded_group), |(result1, result2)| result2))("AAAL-AB"), Err("L-AB"));
     }
 }
