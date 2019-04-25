@@ -85,6 +85,27 @@ fn right<'a, P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Parser<'a, R2>
     map(pair(parser1, parser2), |(_left, right)| right)
 }
 
+fn one_or_more<'a, P, A>(parser: P) -> impl Parser<'a, Vec<A>>
+    where
+        P: Parser<'a, A>,
+{
+    move |input: &'a str| {
+        let mut result = Vec::new();
+        let mut next_input = input;
+
+        while let Ok((next, next_item)) = parser.parse(next_input) {
+            next_input = next;
+            result.push(next_item);
+        }
+
+        if result.is_empty() {
+            Err(input)
+        } else {
+            Ok((next_input, result))
+        }
+    }
+}
+
 fn char_to_number(character: char) -> Option<u32> {
     match character {
         c @ 'A'...'J' => Some((c as u32) - CHAR_CODE_A),
@@ -225,5 +246,20 @@ mod left_right {
     #[test]
     fn map_right_aac_dash() {
         assert_eq!(right(encoded_group, dash).parse("AAC-123"), Ok(("123", ())));
+    }
+}
+
+#[cfg(test)]
+mod one_or_more {
+    use super::*;
+
+    #[test]
+    fn one_or_more_dash_dash_dash() {
+        assert_eq!(one_or_more(dash).parse("---"), Ok(("", vec![(), (), ()])));
+    }
+
+    #[test]
+    fn one_or_more_no_matches() {
+        assert_eq!(one_or_more(dash).parse("AAA-"), Err("AAA-"));
     }
 }
