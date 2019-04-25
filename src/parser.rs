@@ -45,7 +45,7 @@ fn encoded_group(input: &str) -> ParseResult<u32> {
     }
 }
 
-fn pair<'a, P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Fn(&'a str) -> ParseResult<'a, (R1, R2)>
+fn pair<'a, P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Parser<'a, (R1, R2)>
     where P1: Parser<'a, R1>,
           P2: Parser<'a, R2>,
 {
@@ -58,7 +58,7 @@ fn pair<'a, P1, P2, R1, R2>(parser1: P1, parser2: P2) -> impl Fn(&'a str) -> Par
     }
 }
 
-fn map<'a, P, F, A, B>(parser: P, map_fn: F) -> impl Fn(&'a str) -> ParseResult<'a, B>
+fn map<'a, P, F, A, B>(parser: P, map_fn: F) -> impl Parser<'a, B>
     where
         P: Parser<'a, A>,
         F: Fn(A) -> B
@@ -173,12 +173,12 @@ mod pair {
 
     #[test]
     fn pair_dash_dash() {
-        assert_eq!(pair(dash, dash)("--"), Ok(("", ((), ()))));
+        assert_eq!(pair(dash, dash).parse("--"), Ok(("", ((), ()))));
     }
 
     #[test]
     fn pair_aaaa_dash_aaab_dash_123() {
-        assert_eq!(pair(encoded_group, pair(dash, pair(encoded_group, dash)))("AAAA-AAAB-123"), Ok(("123", (0, ((), (1, ()))))));
+        assert_eq!(pair(encoded_group, pair(dash, pair(encoded_group, dash))).parse("AAAA-AAAB-123"), Ok(("123", (0, ((), (1, ()))))));
     }
 }
 
@@ -188,11 +188,11 @@ mod map {
 
     #[test]
     fn map_aaac_dash_ab() {
-        assert_eq!(pair(encoded_group, map(pair(dash, encoded_group), |(result1, result2)| result2))("AAAC-AB"), Ok(("", (2, 1))));
+        assert_eq!(pair(encoded_group, map(pair(dash, encoded_group), |(result1, result2)| result2)).parse("AAAC-AB"), Ok(("", (2, 1))));
     }
 
     #[test]
     fn map_aaal_dash_ab() {
-        assert_eq!(pair(encoded_group, map(pair(dash, encoded_group), |(result1, result2)| result2))("AAAL-AB"), Err("L-AB"));
+        assert_eq!(pair(encoded_group, map(pair(dash, encoded_group), |(result1, result2)| result2)).parse("AAAL-AB"), Err("L-AB"));
     }
 }
